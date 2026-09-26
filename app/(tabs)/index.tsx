@@ -1,98 +1,345 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from "react";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { usePokemon } from "../../context/PokemonContext";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [nombre, setNombre] = useState("");
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const {
+    pokemon,
+    cargando,
+    imagenActual,
+    tieneFormaFemenina,
+    mostrarFemenina,
+    cambiarForma,
+    buscarPokemon,
+    cambiarShiny,
+  } = usePokemon();
+
+  const realizarBusqueda = async () => {
+    if (!nombre.trim()) {
+      Alert.alert(
+        "Campo vacío",
+        "Escribe el nombre de un Pokémon."
+      );
+      return;
+    }
+
+    await buscarPokemon(nombre);
+  };
+
+  const imagenNormal = pokemon
+  ? mostrarFemenina
+    ? pokemon.sprites.front_female
+    : pokemon.sprites.front_default
+  : null;
+
+  const imagenShiny = pokemon
+    ? mostrarFemenina
+      ? pokemon.sprites.front_shiny_female
+      : pokemon.sprites.front_shiny
+    : null;
+
+  return (
+    <ScrollView style={styles.scroll}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}>
+      <Text style={styles.titulo}>
+        Buscar Pokémon
+      </Text>
+
+      {/* BUSCADOR */}
+      <View style={styles.buscador}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre del Pokémon"
+          value={nombre}
+          onChangeText={setNombre}
+          autoCapitalize="none"
+          onSubmitEditing={realizarBusqueda}
+        />
+
+        <TouchableOpacity
+          style={styles.botonBuscar}
+          onPress={realizarBusqueda}
+        >
+          <Text style={styles.textoBoton}>
+            Buscar
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* CARGANDO */}
+      {cargando && (
+        <ActivityIndicator
+          size="large"
+          style={styles.loading}
+        />
+      )}
+
+      {/* RESULTADO */}
+      {pokemon && !cargando && (
+        <View style={styles.tarjeta}>
+
+          {/* NOMBRE */}
+          <Text style={styles.nombrePokemon}>
+            {pokemon.name.toUpperCase()}
+          </Text>
+
+          {/* ICONOS */} 
+          <View style={styles.iconosContainer}> 
+            {/* BOTÓN DE FORMA */} 
+            {tieneFormaFemenina && ( 
+              <TouchableOpacity 
+                style={styles.botonGenero} 
+                onPress={cambiarForma} 
+              > 
+                <Ionicons 
+                  name={mostrarFemenina ? "male" : "female"} 
+                  size={15} 
+                  color="#e70cb8" 
+                /> 
+              </TouchableOpacity> 
+            )} 
+          </View>
+
+          {/* IMAGEN PRINCIPAL */}
+          {imagenActual && (
+            <Image
+              source={{
+                uri: imagenActual,
+              }}
+              style={styles.imagen}
+              resizeMode="contain"
+            />
+          )}
+
+          {/* IMÁGENES SECUNDARIAS */}
+          <View style={styles.imagenesSecundarias}>
+
+            {/* NORMAL */}
+            <TouchableOpacity
+              style={[
+                styles.contenedorImagenSecundaria,
+                imagenActual === imagenNormal && styles.botonImagenDesactivado,
+              ]}
+              onPress={() => cambiarShiny(false)}
+              disabled={imagenActual === imagenNormal}
+            >
+              {(
+                mostrarFemenina
+                  ? pokemon.sprites.front_female
+                  : pokemon.sprites.front_default
+              ) && (
+                <Image
+                  source={{
+                    uri:
+                      mostrarFemenina
+                        ? pokemon.sprites.front_female!
+                        : pokemon.sprites.front_default!,
+                  }}
+                  style={styles.imagenSecundaria}
+                  resizeMode="contain"
+                />
+              )}
+            </TouchableOpacity>
+
+            {/* SHINY */}
+            <TouchableOpacity
+              style={[
+                styles.contenedorImagenSecundaria,
+                imagenActual === imagenShiny && styles.botonImagenDesactivado,
+              ]}
+              onPress={() => cambiarShiny(true)}
+              disabled={imagenActual === imagenShiny}
+            >
+              {(
+                mostrarFemenina
+                  ? pokemon.sprites.front_shiny_female
+                  : pokemon.sprites.front_shiny
+              ) && (
+                <Image
+                  source={{
+                    uri:
+                      mostrarFemenina
+                        ? pokemon.sprites.front_shiny_female!
+                        : pokemon.sprites.front_shiny!,
+                  }}
+                  style={styles.imagenSecundaria}
+                  resizeMode="contain"
+                />
+              )}
+            </TouchableOpacity>
+
+          </View>
+
+          {/* ALTURA Y PESO */}
+          <View style={styles.informacion}>
+
+            <View style={styles.dato}>
+              <Text style={styles.etiqueta}>
+                Altura
+              </Text>
+
+              <Text style={styles.valor}>
+                {(pokemon.height / 10).toFixed(1)} m
+              </Text>
+            </View>
+
+            <View style={styles.dato}>
+              <Text style={styles.etiqueta}>
+                Peso
+              </Text>
+
+              <Text style={styles.valor}>
+                {(pokemon.weight / 10).toFixed(1)} kg
+              </Text>
+            </View>
+
+          </View>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#803333",
+    padding: 20,
+    paddingTop: 45,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  titulo: {
+    fontSize: 26,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 25,
+    color: "#cae725",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  buscador: {
+    flexDirection: "row",
+    width: "100%",
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    borderWidth: 2,
+    borderColor: "#222",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginRight: 8,
+    backgroundColor: "#f5f2f2",
+  },
+  botonBuscar: {
+    height: 50,
+    paddingHorizontal: 18,
+    backgroundColor: "#6fd3ec",
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textoBoton: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  loading: {
+    marginTop: 40,
+  },
+  tarjeta: {
+    borderWidth: 2,
+    borderColor: "#222",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+    marginTop: 10,
+    backgroundColor: "#f5f2f2",
+  },
+  nombrePokemon: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  imagen: {
+    width: 250,
+    height: 250,
+  },
+  imagenesSecundarias: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  contenedorImagenSecundaria: {
+    width: "48%",
+    height: 100,
+    borderWidth: 2,
+    borderColor: "#6fd3ec",
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  imagenSecundaria: {
+    width: "90%",
+    height: "90%",
+  },
+  botonGenero: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#f5f2f2",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  informacion: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-around",
+    marginVertical: 15,
+  },
+  dato: {
+    alignItems: "center",
+    minWidth: 100,
+  },
+  etiqueta: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#555",
+  },
+  valor: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 5,
+  },
+  iconosContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    gap: 10, 
+    marginBottom: 10, 
+  },
+  botonImagenDesactivado: {
+    opacity: 0.6,
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: "#803333",
   },
 });
