@@ -2,6 +2,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 
+import onePieceRoutes from "./routes/onePieceRoutes";
 import pokemonRoutes from "./routes/pokemonRoutes";
 
 dotenv.config();
@@ -23,6 +24,11 @@ app.get("/", (_req, res) => {
 app.use(
   "/api/pokemon",
   pokemonRoutes
+);
+
+app.use(
+  "/api/onepiece",
+  onePieceRoutes
 );
 
 app.listen(PORT, () => {

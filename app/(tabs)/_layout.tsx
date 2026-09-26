@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 
+
 export default function TabLayout() {
   return (
     <Tabs
@@ -31,6 +32,34 @@ export default function TabLayout() {
           title: "Datos",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="personajes"
+        options={{
+          title: "Personajes",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="skull-outline"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="frutas"
+        options={{
+          title: "Frutas",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="nutrition-outline"
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

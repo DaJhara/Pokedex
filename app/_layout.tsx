@@ -1,12 +1,10 @@
 import { Stack } from "expo-router";
 
-import { PokemonProvider } from "../context/PokemonContext";
+import AppProviders from "../context/AppProviders";
 
 export default function RootLayout() {
-
   return (
-    <PokemonProvider>
-
+    <AppProviders>
       <Stack>
         <Stack.Screen
           name="(tabs)"
@@ -15,7 +13,6 @@ export default function RootLayout() {
           }}
         />
       </Stack>
-
-    </PokemonProvider>
+    </AppProviders>
   );
 }
