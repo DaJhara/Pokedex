@@ -25,6 +25,7 @@ app.use(
 app.get("/", (_req, res) => {
   res.json({
     mensaje: "Backend Pokémon funcionando",
+    version: "Swagger activo",
   });
 });
 
