@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { API_URL } from "../../config/api";
 import {
-    Personaje,
-    useOnePiece,
+  Personaje,
+  useOnePiece,
 } from "../../context/OnePieceContext";
 
 export default function PersonajesScreen() {
@@ -94,7 +95,7 @@ export default function PersonajesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
 
       {/* TÍTULO */}
       <Text style={styles.titulo}>
@@ -220,7 +221,7 @@ export default function PersonajesScreen() {
         </View>
       )}
 
-    </View>
+    </ScrollView>
   );
 }
 
