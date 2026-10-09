@@ -12,24 +12,17 @@ import {
   View,
 } from "react-native";
 
-import { API_URL } from "../../config/api";
-import {
-  Personaje,
-  useOnePiece,
-} from "../../context/OnePieceContext";
+import { useOnePiece } from "../../context/OnePieceContext";
 
 export default function PersonajesScreen() {
-  const [personaje, setPersonaje] =
-    useState<Personaje | null>(null);
+  const [busqueda, setBusqueda] = useState("");
 
-  const [busqueda, setBusqueda] =
-    useState("");
-
-  const [cargando, setCargando] =
-    useState(false);
-
-  const { guardarPersonaje } =
-    useOnePiece();
+  const {
+    personaje,
+    cargando,
+    error,
+    buscarPersonaje,
+  } = useOnePiece();
 
   const obtenerPersonaje = async () => {
     if (!busqueda.trim()) {
@@ -41,62 +34,14 @@ export default function PersonajesScreen() {
       return;
     }
 
-    try {
-      setCargando(true);
-
-      setPersonaje(null);
-
-      const respuesta = await fetch(
-        `${API_URL}/api/onepiece/personajes?q=${encodeURIComponent(
-          busqueda.trim()
-        )}`
-      );
-
-      if (!respuesta.ok) {
-        throw new Error(
-          "No se pudo obtener el personaje."
-        );
-      }
-
-      const datos: Personaje[] =
-        await respuesta.json();
-
-      if (datos.length === 0) {
-        Alert.alert(
-          "Personaje no encontrado",
-          "No encontramos un personaje con ese nombre."
-        );
-
-        return;
-      }
-
-      const personajeEncontrado =
-        datos[0];
-
-      setPersonaje(personajeEncontrado);
-
-      // Guardamos el personaje
-      // para utilizarlo en la pantalla Frutas
-      guardarPersonaje(personajeEncontrado);
-
-    } catch (error) {
-      console.error(
-        "Error obteniendo personaje:",
-        error
-      );
-
-      Alert.alert(
-        "Error",
-        "No se pudo obtener el personaje."
-      );
-    } finally {
-      setCargando(false);
-    }
+    await buscarPersonaje(busqueda);
   };
 
   return (
-    <ScrollView style={styles.container}>
-
+    <ScrollView
+      style={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* TÍTULO */}
       <Text style={styles.titulo}>
         Personajes de One Piece
@@ -104,7 +49,6 @@ export default function PersonajesScreen() {
 
       {/* BUSCADOR */}
       <View style={styles.buscador}>
-
         <TextInput
           style={styles.input}
           placeholder="Nombre del personaje"
@@ -112,33 +56,38 @@ export default function PersonajesScreen() {
           onChangeText={setBusqueda}
           autoCapitalize="none"
           onSubmitEditing={obtenerPersonaje}
+          returnKeyType="search"
         />
 
         <TouchableOpacity
-          style={styles.botonBuscar}
+          style={[
+            styles.botonBuscar,
+            cargando && styles.botonDeshabilitado,
+          ]}
           onPress={obtenerPersonaje}
+          disabled={cargando}
         >
           <Text style={styles.textoBoton}>
-            Buscar
+            {cargando ? "Buscando..." : "Buscar"}
           </Text>
         </TouchableOpacity>
-
       </View>
 
       {/* CARGANDO */}
       {cargando && (
         <ActivityIndicator
           size="large"
+          color="#cae725"
           style={styles.loading}
         />
       )}
 
-      {/* MENSAJE INICIAL */}
+      {/* MENSAJE INICIAL O ERROR */}
       {!cargando && !personaje && (
         <View style={styles.mensajeInicial}>
           <Text style={styles.textoInicial}>
-            Busca un personaje para ver su
-            información.
+            {error ||
+              "Busca un personaje para ver su información."}
           </Text>
         </View>
       )}
@@ -146,7 +95,6 @@ export default function PersonajesScreen() {
       {/* PERSONAJE */}
       {!cargando && personaje && (
         <View style={styles.tarjeta}>
-
           {/* NOMBRE */}
           <Text style={styles.nombrePersonaje}>
             {personaje.name?.en ||
@@ -167,7 +115,6 @@ export default function PersonajesScreen() {
 
           {/* DATOS */}
           <View style={styles.informacion}>
-
             {personaje.age !== null && (
               <View style={styles.dato}>
                 <Text style={styles.etiqueta}>
@@ -215,12 +162,9 @@ export default function PersonajesScreen() {
                 </Text>
               </View>
             )}
-
           </View>
-
         </View>
       )}
-
     </ScrollView>
   );
 }
@@ -268,6 +212,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  botonDeshabilitado: {
+    opacity: 0.6,
+  },
+
   textoBoton: {
     color: "#fff",
     fontWeight: "bold",
@@ -281,6 +229,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 30,
   },
 
   textoInicial: {
@@ -296,6 +245,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
     backgroundColor: "#f5f2f2",
+    marginBottom: 20,
   },
 
   nombrePersonaje: {
