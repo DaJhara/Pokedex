@@ -22,7 +22,8 @@ interface Bounty {
 
 export interface Personaje {
   id: string;
-  name: NombreLocalizado | null;
+  name: string;
+  name_localized: NombreLocalizado | null;
   age: number | null;
   birthday: unknown;
   blood_type: string | null;

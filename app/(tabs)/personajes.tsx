@@ -97,8 +97,9 @@ export default function PersonajesScreen() {
         <View style={styles.tarjeta}>
           {/* NOMBRE */}
           <Text style={styles.nombrePersonaje}>
-            {personaje.name?.en ||
-              personaje.name?.romaji ||
+            {personaje.name_localized?.en ||
+              personaje.name_localized?.romaji ||
+              personaje.name ||
               "Sin nombre"}
           </Text>
 

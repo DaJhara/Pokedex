@@ -15,7 +15,6 @@ export default function FrutasScreen() {
   if (!personaje) {
     return (
       <View style={styles.container}>
-
         <Text style={styles.titulo}>
           Datos de One Piece
         </Text>
@@ -26,69 +25,86 @@ export default function FrutasScreen() {
             pantalla Personajes.
           </Text>
         </View>
-
       </View>
     );
   }
 
-  const extraData =
-    personaje.extra_data;
+  const extraData = personaje.extra_data;
+  const nombres = personaje.name_localized;
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={
-        styles.contenido
-      }
+      contentContainerStyle={styles.contenido}
     >
-
       {/* TÍTULO */}
       <Text style={styles.titulo}>
         Datos de{" "}
-        {personaje.name?.en ||
-          personaje.name?.romaji ||
+        {nombres?.en ||
+          nombres?.romaji ||
+          personaje.name ||
           "Personaje"}
       </Text>
 
       {/* NOMBRES */}
       <View style={styles.tarjeta}>
-
         <Text style={styles.tituloTarjeta}>
           Nombres
         </Text>
 
-        {personaje.name?.jp && (
+        <View style={styles.dato}>
+          <Text style={styles.etiqueta}>
+            Nombre
+          </Text>
+
+          <Text style={styles.valor}>
+            {personaje.name || "No disponible"}
+          </Text>
+        </View>
+
+        {nombres?.jp && (
           <View style={styles.dato}>
             <Text style={styles.etiqueta}>
               Japonés
             </Text>
 
             <Text style={styles.valor}>
-              {personaje.name.jp}
+              {nombres.jp}
             </Text>
           </View>
         )}
 
-        {personaje.name?.romaji && (
+        {nombres?.romaji && (
           <View style={styles.dato}>
             <Text style={styles.etiqueta}>
               Romaji
             </Text>
 
             <Text style={styles.valor}>
-              {personaje.name.romaji}
+              {nombres.romaji}
             </Text>
           </View>
         )}
-
       </View>
 
-      {/* CUMPLEAÑOS */}
+      {/* INFORMACIÓN PERSONAL */}
       <View style={styles.tarjeta}>
-
         <Text style={styles.tituloTarjeta}>
           Información personal
         </Text>
+
+        {personaje.age !== null &&
+          personaje.age !== undefined && (
+            <View style={styles.dato}>
+              <Text style={styles.etiqueta}>
+                Edad
+              </Text>
+
+              <Text style={styles.valor}>
+                {personaje.age}
+              </Text>
+            </View>
+          )}
 
         {personaje.birthday !== null &&
           personaje.birthday !== undefined && (
@@ -102,108 +118,87 @@ export default function FrutasScreen() {
               </Text>
             </View>
           )}
-
       </View>
 
       {/* RECOMPENSAS */}
       <View style={styles.tarjeta}>
-
         <Text style={styles.tituloTarjeta}>
           Recompensas
         </Text>
 
-        {personaje.bounties.length === 0 ? (
+        {(personaje.bounties ?? []).length === 0 ? (
           <Text style={styles.sinDatos}>
             No hay recompensas registradas.
           </Text>
         ) : (
-          personaje.bounties.map(
-            (bounty) => (
-              <View
-                key={bounty.id}
-                style={styles.dato}
-              >
-                <Text
-                  style={styles.etiqueta}
-                >
-                  Recompensa
-                </Text>
+          personaje.bounties.map((bounty, index) => (
+            <View
+              key={bounty.id || index}
+              style={styles.dato}
+            >
+              <Text style={styles.etiqueta}>
+                Recompensa
+              </Text>
 
-                <Text
-                  style={styles.recompensa}
-                >
-                  {bounty.amount !== null
-                    ? `${bounty.amount.toLocaleString(
-                        "es-CO"
-                      )} ฿`
-                    : "Desconocida"}
-                </Text>
-              </View>
-            )
-          )
+              <Text style={styles.recompensa}>
+                {bounty.amount !== null &&
+                bounty.amount !== undefined
+                  ? `${bounty.amount.toLocaleString(
+                      "es-CO"
+                    )} ฿`
+                  : "Desconocida"}
+              </Text>
+            </View>
+          ))
         )}
-
       </View>
 
       {/* DATOS ADICIONALES */}
-      {extraData && (
-        <View style={styles.tarjeta}>
+      {extraData &&
+        Object.values(extraData).some(
+          (valor) =>
+            valor !== null &&
+            valor !== undefined &&
+            valor !== ""
+        ) && (
+          <View style={styles.tarjeta}>
+            <Text style={styles.tituloTarjeta}>
+              Información adicional
+            </Text>
 
-          <Text style={styles.tituloTarjeta}>
-            Información adicional
-          </Text>
+            {Object.entries(extraData).map(
+              ([clave, valor]) => {
+                if (
+                  valor === null ||
+                  valor === undefined ||
+                  valor === ""
+                ) {
+                  return null;
+                }
 
-          {Object.entries(extraData).map(
-            ([clave, valor]) => {
+                return (
+                  <View
+                    key={clave}
+                    style={styles.dato}
+                  >
+                    <Text style={styles.etiqueta}>
+                      {formatearClave(clave)}
+                    </Text>
 
-              if (
-                valor === null ||
-                valor === undefined ||
-                valor === ""
-              ) {
-                return null;
+                    <Text style={styles.valor}>
+                      {formatearValor(valor)}
+                    </Text>
+                  </View>
+                );
               }
-
-              return (
-                <View
-                  key={clave}
-                  style={styles.dato}
-                >
-                  <Text
-                    style={styles.etiqueta}
-                  >
-                    {formatearClave(clave)}
-                  </Text>
-
-                  <Text
-                    style={styles.valor}
-                  >
-                    {formatearValor(valor)}
-                  </Text>
-                </View>
-              );
-            }
-          )}
-
-        </View>
-      )}
-
+            )}
+          </View>
+        )}
     </ScrollView>
   );
 }
 
-/**
- * Convierte nombres como:
- *
- * first_appearance
- *
- * en:
- *
- * First appearance
- */
-function formatearClave(
-  clave: string
-) {
+function formatearClave(clave: string): string {
   return clave
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letra) =>
@@ -211,14 +206,7 @@ function formatearClave(
     );
 }
 
-/**
- * Convierte objetos o arrays
- * en texto legible.
- */
-function formatearValor(
-  valor: unknown
-): string {
-
+function formatearValor(valor: unknown): string {
   if (
     typeof valor === "string" ||
     typeof valor === "number" ||
@@ -228,19 +216,19 @@ function formatearValor(
   }
 
   if (Array.isArray(valor)) {
-    return valor.join(", ");
+    return valor
+      .map((item) => formatearValor(item))
+      .join(", ");
   }
 
-  if (
-    typeof valor === "object" &&
-    valor !== null
-  ) {
-    return Object.values(valor)
+  if (typeof valor === "object" && valor !== null) {
+    return Object.values(valor as Record<string, unknown>)
       .filter(
         (item) =>
           item !== null &&
           item !== undefined
       )
+      .map((item) => formatearValor(item))
       .join(", ");
   }
 
