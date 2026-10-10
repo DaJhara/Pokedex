@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -21,6 +22,7 @@ interface Docente {
   programa: string;
   correo: string;
   perfil: string | null;
+  foto_url: string | null;
 }
 
 export default function DocentesScreen() {
@@ -32,6 +34,13 @@ export default function DocentesScreen() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [haBuscado, setHaBuscado] = useState(false);
+  const [fotosConError, setFotosConError] = useState<number[]>([]);
+
+  const registrarErrorFoto = (id: number) => {
+    setFotosConError((anteriores) =>
+      anteriores.includes(id) ? anteriores : [...anteriores, id]
+    );
+  };
 
   const buscarDocentes = async () => {
     const termino = nombre.trim();
@@ -126,6 +135,10 @@ export default function DocentesScreen() {
 
   // Ficha completa del docente
   if (docenteSeleccionado) {
+    const mostrarFotoPerfil =
+      Boolean(docenteSeleccionado.foto_url) &&
+      !fotosConError.includes(docenteSeleccionado.id);
+
     return (
       <View style={styles.contenedor}>
         <ScrollView
@@ -136,7 +149,19 @@ export default function DocentesScreen() {
           <View style={styles.marco}>
             <View style={styles.perfilEncabezado}>
               <View style={styles.imagenPerfil}>
-                <Ionicons name="person" size={43} color="#6fd3ec" />
+                {mostrarFotoPerfil ? (
+                  <Image
+                    source={{ uri: docenteSeleccionado.foto_url! }}
+                    style={styles.fotoPerfil}
+                    resizeMode="cover"
+                    onError={() =>
+                      registrarErrorFoto(docenteSeleccionado.id)
+                    }
+                    accessibilityLabel={`Foto de ${docenteSeleccionado.nombres} ${docenteSeleccionado.apellidos}`}
+                  />
+                ) : (
+                  <Ionicons name="person" size={43} color="#6fd3ec" />
+                )}
               </View>
 
               <Text style={styles.nombrePerfil}>
@@ -244,6 +269,8 @@ export default function DocentesScreen() {
                 onChangeText={setNombre}
                 onSubmitEditing={buscarDocentes}
                 returnKeyType="search"
+                underlineColorAndroid="transparent"
+                selectionColor="#803333"
                 accessibilityLabel="Buscar docentes por nombre o apellido"
               />
 
@@ -354,58 +381,74 @@ export default function DocentesScreen() {
                   : `${docentes.length} docentes encontrados`}
               </Text>
 
-              {docentes.map((docente) => (
-                <View key={docente.id} style={styles.tarjeta}>
-                  <View style={styles.encabezadoTarjeta}>
-                    <View style={styles.iconoDocente}>
-                      <Ionicons
-                        name="person"
-                        size={28}
-                        color="#6fd3ec"
-                      />
+              {docentes.map((docente) => {
+                const mostrarFoto =
+                  Boolean(docente.foto_url) &&
+                  !fotosConError.includes(docente.id);
+
+                return (
+                  <View key={docente.id} style={styles.tarjeta}>
+                    <View style={styles.encabezadoTarjeta}>
+                      <View style={styles.iconoDocente}>
+                        {mostrarFoto ? (
+                          <Image
+                            source={{ uri: docente.foto_url! }}
+                            style={styles.fotoDocente}
+                            resizeMode="cover"
+                            onError={() => registrarErrorFoto(docente.id)}
+                            accessibilityLabel={`Foto de ${docente.nombres} ${docente.apellidos}`}
+                          />
+                        ) : (
+                          <Ionicons
+                            name="person"
+                            size={28}
+                            color="#6fd3ec"
+                          />
+                        )}
+                      </View>
+
+                      <View style={styles.datosPrincipales}>
+                        <Text style={styles.nombreDocente}>
+                          {docente.nombres} {docente.apellidos}
+                        </Text>
+
+                        <Text style={styles.facultad}>
+                          {docente.facultad}
+                        </Text>
+                      </View>
                     </View>
 
-                    <View style={styles.datosPrincipales}>
-                      <Text style={styles.nombreDocente}>
-                        {docente.nombres} {docente.apellidos}
-                      </Text>
+                    <View style={styles.separador} />
 
-                      <Text style={styles.facultad}>
-                        {docente.facultad}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.separador} />
-
-                  <DatoResumen
-                    icono="school-outline"
-                    etiqueta="Programa académico"
-                    valor={docente.programa}
-                  />
-
-                  <DatoResumen
-                    icono="mail-outline"
-                    etiqueta="Correo electrónico"
-                    valor={docente.correo}
-                  />
-
-                  <TouchableOpacity
-                    style={styles.botonVerMas}
-                    onPress={() => setDocenteSeleccionado(docente)}
-                    activeOpacity={0.8}
-                    accessibilityLabel={`Ver perfil de ${docente.nombres} ${docente.apellidos}`}
-                  >
-                    <Text style={styles.textoVerMas}>Ver más</Text>
-
-                    <Ionicons
-                      name="arrow-forward"
-                      size={17}
-                      color="#222"
+                    <DatoResumen
+                      icono="school-outline"
+                      etiqueta="Programa académico"
+                      valor={docente.programa}
                     />
-                  </TouchableOpacity>
-                </View>
-              ))}
+
+                    <DatoResumen
+                      icono="mail-outline"
+                      etiqueta="Correo electrónico"
+                      valor={docente.correo}
+                    />
+
+                    <TouchableOpacity
+                      style={styles.botonVerMas}
+                      onPress={() => setDocenteSeleccionado(docente)}
+                      activeOpacity={0.8}
+                      accessibilityLabel={`Ver perfil de ${docente.nombres} ${docente.apellidos}`}
+                    >
+                      <Text style={styles.textoVerMas}>Ver más</Text>
+
+                      <Ionicons
+                        name="arrow-forward"
+                        size={17}
+                        color="#222"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
 
               <TouchableOpacity
                 style={styles.botonLimpiar}
@@ -478,14 +521,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Márgenes compartidos por la búsqueda y la ficha
   contenido: {
     padding: 14,
     paddingBottom: 24,
     flexGrow: 1,
   },
 
-  // Marco interior de ambas pantallas
   marco: {
     flex: 1,
     borderWidth: 2,
@@ -536,6 +577,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 9,
     paddingHorizontal: 5,
+    outlineStyle: "none",
+    outlineWidth: 0,
+    outlineColor: "transparent",
+    borderWidth: 0,
   },
 
   botonBuscar: {
@@ -620,6 +665,12 @@ const styles = StyleSheet.create({
     borderColor: "#222",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  fotoDocente: {
+    width: "100%",
+    height: "100%",
   },
 
   datosPrincipales: {
@@ -725,6 +776,12 @@ const styles = StyleSheet.create({
     borderColor: "#00a6ed",
     backgroundColor: "#fff",
     marginBottom: 9,
+    overflow: "hidden",
+  },
+
+  fotoPerfil: {
+    width: "100%",
+    height: "100%",
   },
 
   nombrePerfil: {
