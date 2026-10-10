@@ -21,9 +21,9 @@ function obtenerOpenAPI() {
     openapi: "3.0.3",
     info: {
       title: "Microservicio de Docentes",
-      version: "2.0.0",
+      version: "2.1.0",
       description:
-        "API de docentes, facultades y programas académicos con PostgreSQL y Node.js nativo.",
+        "API de docentes, facultades y programas académicos con PostgreSQL y Node.js nativo. Incluye la URL de la fotografía de cada docente.",
     },
     servers: [{ url: "/" }],
     paths: {
@@ -52,17 +52,19 @@ function obtenerOpenAPI() {
               in: "query",
               required: false,
               schema: { type: "string" },
+              description: "Filtra por nombre de facultad",
             },
             {
               name: "programa",
               in: "query",
               required: false,
               schema: { type: "string" },
+              description: "Filtra por nombre de programa",
             },
           ],
           responses: {
             200: {
-              description: "Lista de docentes",
+              description: "Lista de docentes, incluyendo foto_url",
               content: {
                 "application/json": {
                   schema: {
@@ -89,7 +91,7 @@ function obtenerOpenAPI() {
           ],
           responses: {
             200: {
-              description: "Docente encontrado",
+              description: "Docente encontrado, incluyendo foto_url",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/Docente" },
@@ -97,6 +99,7 @@ function obtenerOpenAPI() {
               },
             },
             404: { description: "Docente no encontrado" },
+            500: { description: "Error interno del servidor" },
           },
         },
       },
@@ -134,6 +137,7 @@ function obtenerOpenAPI() {
             200: {
               description: "Lista de programas",
             },
+            500: { description: "Error interno del servidor" },
           },
         },
       },
@@ -150,6 +154,12 @@ function obtenerOpenAPI() {
             programa: { type: "string" },
             correo: { type: "string" },
             perfil: { type: "string", nullable: true },
+            foto_url: {
+              type: "string",
+              format: "uri",
+              nullable: true,
+              description: "URL pública de la fotografía del docente",
+            },
             created_at: { type: "string", format: "date-time" },
           },
         },
@@ -173,8 +183,7 @@ function obtenerHTMLSwagger() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Swagger - Microservicio Docentes</title>
-  <link rel="stylesheet"
-    href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
 </head>
 <body>
   <div id="swagger-ui"></div>
@@ -196,6 +205,7 @@ const servidor = http.createServer(async (req, res) => {
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     });
+
     return res.end();
   }
 
@@ -238,9 +248,11 @@ const servidor = http.createServer(async (req, res) => {
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
       });
+
       return res.end(obtenerHTMLSwagger());
     }
 
+    // Consultar docentes, con filtros opcionales y sus fotografías.
     if (ruta === "/api/docentes") {
       const nombre = url.searchParams.get("nombre")?.trim();
       const facultad = url.searchParams.get("facultad")?.trim();
@@ -255,6 +267,7 @@ const servidor = http.createServer(async (req, res) => {
            p.nombre AS programa,
            d.correo,
            d.perfil,
+           d.foto_url,
            d.created_at
          FROM docentes d
          JOIN programas p ON p.id = d.programa_id
@@ -275,6 +288,7 @@ const servidor = http.createServer(async (req, res) => {
       return enviarJSON(res, 200, resultado.rows);
     }
 
+    // Consultar un docente específico por su ID.
     const coincidenciaDocente = ruta.match(
       /^\/api\/docentes\/(\d+)$/
     );
@@ -291,6 +305,7 @@ const servidor = http.createServer(async (req, res) => {
            p.nombre AS programa,
            d.correo,
            d.perfil,
+           d.foto_url,
            d.created_at
          FROM docentes d
          JOIN programas p ON p.id = d.programa_id
