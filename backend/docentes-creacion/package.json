@@ -1,0 +1,17 @@
+{
+  "name": "microservicio-docentes.creación",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Microservicio de creación de docentes con Node.js nativo y PostgreSQL",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

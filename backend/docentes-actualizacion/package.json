@@ -1,0 +1,17 @@
+{
+  "name": "microservicio-docentes-actualizacion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Microservicio para actualizar docentes en PostgreSQL",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}
