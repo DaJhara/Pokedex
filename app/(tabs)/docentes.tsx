@@ -1,6 +1,6 @@
 
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,14 +17,11 @@ import {
 } from "react-native";
 
 import {
-  actualizarDocente,
-  borrarDocente,
-  consultarDocentes,
-  consultarProgramas,
-  crearDocente,
-  leerDocentesLocales,
-  suscribirseASincronizacion,
-} from "../../services/docentesOffline";
+  DOCENTES_ACTUALIZACION_API_URL,
+  DOCENTES_API_URL,
+  DOCENTES_CREACION_API_URL,
+  DOCENTES_ELIMINACION_API_URL,
+} from "../../config/api";
 
 interface Docente {
   id: number;
@@ -74,17 +71,6 @@ export default function DocentesScreen() {
   const [fotoForm, setFotoForm] = useState("");
   const [cargandoFormulario, setCargandoFormulario] = useState(false);
 
-  // Cuando termina una sincronización con los microservicios, la lista se refresca en silencio
-  useEffect(() => {
-    return suscribirseASincronizacion(() => {
-      if (!busqueda) return;
-
-      leerDocentesLocales(busqueda)
-        .then(setDocentes)
-        .catch(() => undefined);
-    });
-  }, [busqueda]);
-
   const registrarErrorFoto = (id: number) => {
     setFotosConError((anteriores) =>
       anteriores.includes(id) ? anteriores : [...anteriores, id]
@@ -126,7 +112,17 @@ export default function DocentesScreen() {
       setBusqueda(termino);
       setHaBuscado(true);
 
-      const datos: Docente[] = await consultarDocentes(termino);
+      const respuesta = await fetch(
+        `${DOCENTES_API_URL}/api/docentes?nombre=${encodeURIComponent(
+          termino
+        )}`
+      );
+
+      if (!respuesta.ok) {
+        throw new Error("No fue posible consultar los docentes.");
+      }
+
+      const datos: Docente[] = await respuesta.json();
       setDocentes(datos);
     } catch {
       setError(
@@ -168,7 +164,13 @@ export default function DocentesScreen() {
     try {
       setCargandoFormulario(true);
 
-      const datos: Programa[] = await consultarProgramas();
+      const respuesta = await fetch(`${DOCENTES_API_URL}/api/programas`);
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudieron cargar los programas.");
+      }
+
+      const datos: Programa[] = await respuesta.json();
       setProgramas(datos);
 
       if (docente) {
@@ -222,7 +224,17 @@ export default function DocentesScreen() {
       setCargando(true);
       setError("");
 
-      const datos: Docente[] = await consultarDocentes(termino);
+      const respuesta = await fetch(
+        `${DOCENTES_API_URL}/api/docentes?nombre=${encodeURIComponent(
+          termino
+        )}`
+      );
+
+      if (!respuesta.ok) {
+        throw new Error("No fue posible actualizar los resultados.");
+      }
+
+      const datos: Docente[] = await respuesta.json();
       setDocentes(datos);
       setHaBuscado(true);
     } catch {
@@ -277,13 +289,29 @@ export default function DocentesScreen() {
 
     const editando = Boolean(docenteEditando);
 
+    const url = editando
+      ? `${DOCENTES_ACTUALIZACION_API_URL}/api/docentes/${docenteEditando!.id}`
+      : `${DOCENTES_CREACION_API_URL}/api/docentes`;
+
     try {
       setCargandoFormulario(true);
 
-      if (docenteEditando) {
-        await actualizarDocente(docenteEditando.id, datosDocente);
-      } else {
-        await crearDocente(datosDocente);
+      const respuesta = await fetch(url, {
+        method: editando ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(datosDocente),
+      });
+
+      if (!respuesta.ok) {
+        const detalle = await respuesta.text();
+
+        throw new Error(
+          detalle ||
+            `El servidor respondió con código ${respuesta.status}.`
+        );
       }
 
       setFormularioVisible(false);
@@ -346,7 +374,24 @@ export default function DocentesScreen() {
       setCargando(true);
       setError("");
 
-      await borrarDocente(docente.id);
+      const respuesta = await fetch(
+        `${DOCENTES_ELIMINACION_API_URL}/api/docentes/${docente.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!respuesta.ok) {
+        const detalle = await respuesta.text();
+
+        throw new Error(
+          detalle ||
+            `El servidor respondió con código ${respuesta.status}.`
+        );
+      }
 
       setDocentes((anteriores) =>
         anteriores.filter((item) => item.id !== docente.id)
