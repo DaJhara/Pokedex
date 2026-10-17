@@ -1,8 +1,8 @@
 import {
-    DOCENTES_ACTUALIZACION_API_URL,
-    DOCENTES_API_URL,
-    DOCENTES_CREACION_API_URL,
-    DOCENTES_ELIMINACION_API_URL,
+  DOCENTES_ACTUALIZACION_API_URL,
+  DOCENTES_API_URL,
+  DOCENTES_CREACION_API_URL,
+  DOCENTES_ELIMINACION_API_URL,
 } from "../config/api";
 
 export interface Docente {
@@ -16,6 +16,7 @@ export interface Docente {
   perfil: string | null;
   foto_url: string | null;
   created_at?: string;
+  nuevo?: boolean; // solo local: true si el docente apareció en la nube y aún no se ha visto
 }
 
 export interface Programa {
@@ -43,8 +44,8 @@ export interface DatosDocente {
 
 export type ResultadoEnvio =
   | { estado: "ok"; cuerpo: unknown }
-  | { estado: "reintentar"; motivo: string } // sin conexión o servidor caído: se vuelve a intentar luego
-  | { estado: "descartar"; motivo: string }; // el servidor rechazó la operación: no tiene sentido reintentar
+  | { estado: "reintentar"; motivo: string; codigo?: number } // sin conexión o servidor caído: se vuelve a intentar luego
+  | { estado: "descartar"; motivo: string; codigo?: number }; // el servidor rechazó la operación: no tiene sentido reintentar
 
 const TIMEOUT_PING_MS = 6_000;
 const TIMEOUT_LECTURA_MS = 20_000;
@@ -172,7 +173,11 @@ async function enviar(
     respuesta.status === 408 ||
     respuesta.status === 429;
 
-  return { estado: esTransitorio ? "reintentar" : "descartar", motivo };
+  return {
+    estado: esTransitorio ? "reintentar" : "descartar",
+    motivo,
+    codigo: respuesta.status,
+  };
 }
 
 export function enviarCreacion(datos: DatosDocente): Promise<ResultadoEnvio> {

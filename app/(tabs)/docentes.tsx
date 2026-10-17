@@ -1,6 +1,6 @@
 
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,12 +16,17 @@ import {
   View,
 } from "react-native";
 
+import PanelSincronizacion from "../../components/PanelSincronizacion";
 import {
-  DOCENTES_ACTUALIZACION_API_URL,
-  DOCENTES_API_URL,
-  DOCENTES_CREACION_API_URL,
-  DOCENTES_ELIMINACION_API_URL,
-} from "../../config/api";
+  actualizarDocente,
+  borrarDocente,
+  consultarDocentes,
+  consultarProgramas,
+  crearDocente,
+  leerDocentesLocales,
+  marcarDocenteVisto,
+  suscribirseASincronizacion,
+} from "../../services/docentesOffline";
 
 interface Docente {
   id: number;
@@ -33,6 +38,7 @@ interface Docente {
   correo: string;
   perfil: string | null;
   foto_url: string | null;
+  nuevo?: boolean;
 }
 
 interface Programa {
@@ -70,6 +76,17 @@ export default function DocentesScreen() {
   const [perfilForm, setPerfilForm] = useState("");
   const [fotoForm, setFotoForm] = useState("");
   const [cargandoFormulario, setCargandoFormulario] = useState(false);
+
+  // Cuando termina una sincronización con los microservicios, la lista se refresca en silencio
+  useEffect(() => {
+    return suscribirseASincronizacion(() => {
+      if (!busqueda) return;
+
+      leerDocentesLocales(busqueda)
+        .then(setDocentes)
+        .catch(() => undefined);
+    });
+  }, [busqueda]);
 
   const registrarErrorFoto = (id: number) => {
     setFotosConError((anteriores) =>
@@ -112,17 +129,7 @@ export default function DocentesScreen() {
       setBusqueda(termino);
       setHaBuscado(true);
 
-      const respuesta = await fetch(
-        `${DOCENTES_API_URL}/api/docentes?nombre=${encodeURIComponent(
-          termino
-        )}`
-      );
-
-      if (!respuesta.ok) {
-        throw new Error("No fue posible consultar los docentes.");
-      }
-
-      const datos: Docente[] = await respuesta.json();
+      const datos: Docente[] = await consultarDocentes(termino);
       setDocentes(datos);
     } catch {
       setError(
@@ -164,13 +171,7 @@ export default function DocentesScreen() {
     try {
       setCargandoFormulario(true);
 
-      const respuesta = await fetch(`${DOCENTES_API_URL}/api/programas`);
-
-      if (!respuesta.ok) {
-        throw new Error("No se pudieron cargar los programas.");
-      }
-
-      const datos: Programa[] = await respuesta.json();
+      const datos: Programa[] = await consultarProgramas();
       setProgramas(datos);
 
       if (docente) {
@@ -224,17 +225,7 @@ export default function DocentesScreen() {
       setCargando(true);
       setError("");
 
-      const respuesta = await fetch(
-        `${DOCENTES_API_URL}/api/docentes?nombre=${encodeURIComponent(
-          termino
-        )}`
-      );
-
-      if (!respuesta.ok) {
-        throw new Error("No fue posible actualizar los resultados.");
-      }
-
-      const datos: Docente[] = await respuesta.json();
+      const datos: Docente[] = await consultarDocentes(termino);
       setDocentes(datos);
       setHaBuscado(true);
     } catch {
@@ -289,29 +280,13 @@ export default function DocentesScreen() {
 
     const editando = Boolean(docenteEditando);
 
-    const url = editando
-      ? `${DOCENTES_ACTUALIZACION_API_URL}/api/docentes/${docenteEditando!.id}`
-      : `${DOCENTES_CREACION_API_URL}/api/docentes`;
-
     try {
       setCargandoFormulario(true);
 
-      const respuesta = await fetch(url, {
-        method: editando ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(datosDocente),
-      });
-
-      if (!respuesta.ok) {
-        const detalle = await respuesta.text();
-
-        throw new Error(
-          detalle ||
-            `El servidor respondió con código ${respuesta.status}.`
-        );
+      if (docenteEditando) {
+        await actualizarDocente(docenteEditando.id, datosDocente);
+      } else {
+        await crearDocente(datosDocente);
       }
 
       setFormularioVisible(false);
@@ -374,24 +349,7 @@ export default function DocentesScreen() {
       setCargando(true);
       setError("");
 
-      const respuesta = await fetch(
-        `${DOCENTES_ELIMINACION_API_URL}/api/docentes/${docente.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (!respuesta.ok) {
-        const detalle = await respuesta.text();
-
-        throw new Error(
-          detalle ||
-            `El servidor respondió con código ${respuesta.status}.`
-        );
-      }
+      await borrarDocente(docente.id);
 
       setDocentes((anteriores) =>
         anteriores.filter((item) => item.id !== docente.id)
@@ -760,6 +718,8 @@ export default function DocentesScreen() {
             Busca un docente por su nombre o apellido.
           </Text>
 
+          <PanelSincronizacion />
+
           <View style={styles.filaBusqueda}>
             <View style={styles.busquedaContenedor}>
               <Ionicons
@@ -938,6 +898,12 @@ export default function DocentesScreen() {
                         <Text style={styles.facultad}>
                           {docente.facultad}
                         </Text>
+
+                        {docente.nuevo && (
+                          <View style={styles.etiquetaNuevo}>
+                            <Text style={styles.textoNuevo}>NUEVO</Text>
+                          </View>
+                        )}
                       </View>
 
                       <View style={styles.accionesTarjeta}>
@@ -987,7 +953,13 @@ export default function DocentesScreen() {
 
                     <TouchableOpacity
                       style={styles.botonVerMas}
-                      onPress={() => setDocenteSeleccionado(docente)}
+                      onPress={() => {
+                        setDocenteSeleccionado(docente);
+
+                        if (docente.nuevo) {
+                          void marcarDocenteVisto(docente.id);
+                        }
+                      }}
                       activeOpacity={0.8}
                       accessibilityLabel={`Ver perfil de ${docente.nombres} ${docente.apellidos}`}
                     >
@@ -1238,6 +1210,23 @@ const styles = StyleSheet.create({
     color: "#444",
     fontSize: 13,
     marginTop: 4,
+  },
+
+  etiquetaNuevo: {
+    alignSelf: "flex-start",
+    backgroundColor: "#cae725",
+    borderColor: "#222",
+    borderWidth: 1.2,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 6,
+  },
+
+  textoNuevo: {
+    color: "#222",
+    fontSize: 11,
+    fontWeight: "bold",
   },
 
   accionesTarjeta: {

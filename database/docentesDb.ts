@@ -7,7 +7,8 @@ const NOMBRE_BD = "docentes_local.db";
  * más las tablas auxiliares de sincronización:
  *  - cola_sync: operaciones del CRUD realizadas sin conexión, pendientes de enviar.
  *  - mapa_ids:  equivalencia entre IDs temporales (negativos) e IDs reales del servidor.
- *  - meta:      valores sueltos (última descarga, contador de IDs temporales).
+ *  - conflictos: avisos de duplicados/rechazos detectados al sincronizar.
+ *  - meta:      valores sueltos (última descarga, intervalo elegido, contador de IDs temporales).
  */
 const ESQUEMA = `
   CREATE TABLE IF NOT EXISTS facultades (
@@ -31,7 +32,8 @@ const ESQUEMA = `
     perfil TEXT,
     foto_url TEXT,
     programa_id INTEGER NOT NULL,
-    created_at TEXT
+    created_at TEXT,
+    nuevo INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS cola_sync (
@@ -47,6 +49,17 @@ const ESQUEMA = `
   CREATE TABLE IF NOT EXISTS mapa_ids (
     local_id INTEGER PRIMARY KEY NOT NULL,
     remote_id INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS conflictos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo TEXT NOT NULL,
+    correo TEXT,
+    mensaje TEXT NOT NULL,
+    local_json TEXT,
+    remoto_json TEXT,
+    creado_en TEXT NOT NULL,
+    visto INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS meta (
@@ -65,6 +78,17 @@ async function abrirBaseDeDatos(): Promise<SQLiteDatabase | null> {
     const db = await SQLite.openDatabaseAsync(NOMBRE_BD);
 
     await db.execAsync(ESQUEMA);
+
+    // Migración: la versión anterior no tenía la columna "nuevo" en docentes.
+    const columnas = await db.getAllAsync<{ name: string }>(
+      "PRAGMA table_info(docentes)"
+    );
+
+    if (!columnas.some((columna) => columna.name === "nuevo")) {
+      await db.execAsync(
+        "ALTER TABLE docentes ADD COLUMN nuevo INTEGER NOT NULL DEFAULT 0"
+      );
+    }
 
     return db;
   } catch (error) {

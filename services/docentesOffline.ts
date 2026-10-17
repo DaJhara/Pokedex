@@ -8,6 +8,8 @@ import {
 } from "../database/docentesDb";
 import * as api from "./docentesApi";
 import {
+  marcarDocenteVisto,
+  refrescarEstado,
   sincronizarDocentes,
   suscribirseASincronizacion,
   type TipoOperacion,
@@ -15,7 +17,10 @@ import {
 } from "./docentesSync";
 
 export type { DatosDocente, Docente, Programa } from "./docentesApi";
-export { suscribirseASincronizacion };
+export { marcarDocenteVisto, suscribirseASincronizacion };
+
+// Fila tal como sale de SQLite (nuevo es 0 / 1).
+type FilaDocente = Omit<api.Docente, "nuevo"> & { nuevo: number };
 
 /**
  * Capa que usa la pantalla de Docentes. Todo se lee y escribe en SQLite,
@@ -42,7 +47,7 @@ export async function leerDocentesLocales(
   termino: string
 ): Promise<api.Docente[]> {
   const filas = await ejecutarEnBD((db) =>
-    db.getAllAsync<api.Docente>(
+    db.getAllAsync<FilaDocente>(
       `SELECT
          d.id,
          d.nombres,
@@ -53,7 +58,8 @@ export async function leerDocentesLocales(
          d.correo,
          d.perfil,
          d.foto_url,
-         d.created_at
+         d.created_at,
+         d.nuevo
        FROM docentes d
        JOIN programas p ON p.id = d.programa_id
        JOIN facultades f ON f.id = p.facultad_id`
@@ -63,6 +69,7 @@ export async function leerDocentesLocales(
   const buscado = termino.trim().toLowerCase();
 
   return filas
+    .map((fila) => ({ ...fila, nuevo: fila.nuevo === 1 }))
     .filter(
       (docente) =>
         !buscado ||
@@ -200,6 +207,7 @@ export async function crearDocente(datos: api.DatosDocente): Promise<void> {
     await encolar(db, "CREAR", idLocal, datos);
   }, true);
 
+  void refrescarEstado();
   void sincronizarDocentes();
 }
 
@@ -237,6 +245,7 @@ export async function actualizarDocente(
     await encolar(db, "ACTUALIZAR", idReal, datos);
   }, true);
 
+  void refrescarEstado();
   void sincronizarDocentes();
 }
 
@@ -253,5 +262,6 @@ export async function borrarDocente(id: number): Promise<void> {
     await encolar(db, "ELIMINAR", idReal, null);
   }, true);
 
+  void refrescarEstado();
   void sincronizarDocentes();
 }
