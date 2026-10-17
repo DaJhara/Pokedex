@@ -41,11 +41,7 @@ export default function TabLayout() {
         options={{
           title: "Personajes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="skull-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="skull-outline" size={size} color={color} />
           ),
         }}
       />
@@ -55,11 +51,7 @@ export default function TabLayout() {
         options={{
           title: "Frutas",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="nutrition-outline"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="nutrition-outline" size={size} color={color} />
           ),
         }}
       />
@@ -69,8 +61,18 @@ export default function TabLayout() {
         options={{
           title: "Docentes",
           tabBarIcon: ({ color, size }) => (
+            <Ionicons name="school-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color, size }) => (
             <Ionicons
-              name="school-outline"
+              name="chatbubbles-outline"
               size={size}
               color={color}
             />
