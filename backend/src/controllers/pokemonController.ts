@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
-import { obtenerPokemon } from "../services/pokemonService";
+import {
+  listarPokemonRegistrados,
+  obtenerPokemon,
+} from "../services/pokemonService";
 
 export async function buscarPokemon(
   req: Request,
@@ -23,6 +26,22 @@ export async function buscarPokemon(
 
     res.status(404).json({
       mensaje: "Pokémon no encontrado",
+    });
+  }
+}
+
+
+export async function listarPokemonCatalogo(
+  _req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const pokemon = await listarPokemonRegistrados();
+    res.status(200).json(pokemon);
+  } catch (error) {
+    console.error("Error al listar Pokémon:", error);
+    res.status(500).json({
+      mensaje: "No se pudo obtener el catálogo de Pokémon",
     });
   }
 }

@@ -113,3 +113,17 @@ export async function obtenerPokemon(
 
   return resultado;
 }
+
+export async function listarPokemonRegistrados(): Promise<
+  { id: number; name: string }[]
+> {
+  const resultado = await pool.query(
+    `
+    SELECT id, name
+    FROM pokemon
+    ORDER BY id
+    `
+  );
+
+  return resultado.rows;
+}

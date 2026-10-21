@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from src.services.onepieceService import obtener_personaje
+from src.services.onepieceService import obtener_personaje,  listar_personajes
 
 
 router = APIRouter(
@@ -8,6 +8,13 @@ router = APIRouter(
     tags=["One Piece"],
 )
 
+@router.get(
+    "/catalogo",
+    summary="Listar personajes registrados",
+    description="Devuelve los nombres de los personajes almacenados en MongoDB."
+)
+def obtener_catalogo_personajes():
+    return listar_personajes()
 
 @router.get(
     "/{nombre}",

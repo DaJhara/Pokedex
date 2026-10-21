@@ -19,3 +19,12 @@ def obtener_personaje(nombre: str):
     personaje["_id"] = str(personaje["_id"])
 
     return personaje
+
+
+def listar_personajes():
+    personajes = characters_collection.find(
+        {},
+        {"_id": 0, "name": 1}
+    ).sort("name", 1)
+
+    return list(personajes)

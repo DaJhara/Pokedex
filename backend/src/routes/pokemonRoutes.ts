@@ -1,7 +1,8 @@
 import { Router } from "express";
 
 import {
-    buscarPokemon,
+  buscarPokemon,
+  listarPokemonCatalogo,
 } from "../controllers/pokemonController";
 
 const router = Router();
@@ -28,6 +29,8 @@ const router = Router();
  *       404:
  *         description: Pokémon no encontrado.
  */
+
+router.get("/catalogo", listarPokemonCatalogo);
 router.get(
   "/:nombre",
   buscarPokemon
