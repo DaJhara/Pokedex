@@ -18,5 +18,5 @@ export const DOCENTES_ACTUALIZACION_API_URL =
 export const DOCENTES_ELIMINACION_API_URL =
   "https://docentes-eliminacion.onrender.com";
 
-export const CHAT_API_URL = process.env.EXPO_PUBLIC_CHAT_API_URL ||
-  `http://${host}:3001`;
+export const CHAT_API_URL = 
+  "https://chat-ia-m5xi.onrender.com";
