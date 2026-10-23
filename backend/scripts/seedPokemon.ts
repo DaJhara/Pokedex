@@ -17,17 +17,7 @@ const pool = new Pool({
 });
 
 const pokemonNames = [
-  "pikachu",
-  "charizard",
-  "bulbasaur",
-  "squirtle",
-  "eevee",
-  "lucario",
-  "gengar",
-  "greninja",
-  "gardevoir",
-  "pyroar-male",
-  "ditto",
+  "caterpie",
 ];
 
 async function obtenerPokemon(nombre: string) {

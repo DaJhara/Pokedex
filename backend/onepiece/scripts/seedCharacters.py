@@ -20,26 +20,7 @@ if not MONGODB_URI:
 API_URL = "https://onepieceapi.com/api/characters"
 
 PERSONAJES = [
-    "Monkey D. Luffy",
-    "Roronoa Zoro",
-    "Nami",
-    "Usopp",
-    "Sanji",
-    "Tony Tony Chopper",
-    "Nico Robin",
-    "Franky",
-    "Brook",
-    "Trafalgar D. Water Law",
-    "Saint Figarland Shamrock",
-    "Shanks",
-    "Saint Figarland Garling",
-    "Edward Newgate",
-    "Gol D. Roger",
-    "Kaido",
-    "Charlotte Linlin",
-    "Portgas D. Ace",
-    "Sabo",
-    "Monkey D. Garp",
+    "Marshall D. Teach",
 ]
 
 # ============================================================
