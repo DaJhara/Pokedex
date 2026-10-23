@@ -27,6 +27,7 @@ const pokemonNames = [
   "greninja",
   "gardevoir",
   "pyroar-male",
+  "ditto",
 ];
 
 async function obtenerPokemon(nombre: string) {
